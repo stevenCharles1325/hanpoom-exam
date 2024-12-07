@@ -36,7 +36,6 @@ export class PickingSlipService {
         ps.order_id as orderId,
         psi.picking_slip_id as pickingSlipId,
         psi.is_pre_order as hasPreOrderItems,
-        ps.created_at as createdAt,
         CASE
           WHEN DATE(psd.printed_at) = '0000-00-00' AND DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00' THEN 'not printed'
           WHEN DATE(psd.printed_at) != '0000-00-00' AND (DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00') THEN 'printed'
@@ -48,7 +47,7 @@ export class PickingSlipService {
       JOIN picking_slip_dates psd
         ON ps.id = psd.picking_slip_id
       WHERE ${statusWhereClause}
-      ORDER BY createdAt ${sort?.toUpperCase()}
+      ORDER BY ps.created_at ${sort?.toUpperCase()}
       LIMIT ${limit} OFFSET ${limit * page};
     `;
 
