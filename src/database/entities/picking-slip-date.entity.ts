@@ -1,7 +1,7 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { PickingSlip } from './picking-slip.entity';
 
-Entity();
+@Entity({ name: 'picking_slip_dates' })
 export class PickingSlipDate {
   @PrimaryGeneratedColumn()
   id: number;
@@ -63,7 +63,21 @@ export class PickingSlipDate {
   @Column({ name: 'held_reason' })
   heldReason: string;
 
+  // @VirtualColumn({
+  //   query: () => `
+  //   SELECT
+  //     CASE
+  //       WHEN DATE(psd.printed_at) = '0000-00-00' AND DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00' THEN 'not printed'
+  //       WHEN DATE(psd.printed_at) != '0000-00-00' AND (DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00') THEN 'printed'
+  //       WHEN DATE(held_at) != '0000-00-00' THEN 'held'
+  //     END AS pickingSlipStatus
+  //   FROM picking_slip_dates
+  // `,
+  // })
+  // pickingSlipStatus: string;
+
   // Relationships
   @OneToOne(() => PickingSlip, (pickingSlip) => pickingSlip.pickingSlipDate)
+  @JoinColumn({ name: 'picking_slip_id' })
   pickingSlip: PickingSlip;
 }

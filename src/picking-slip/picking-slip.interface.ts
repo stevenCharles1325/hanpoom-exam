@@ -1,7 +1,7 @@
 export interface PickingSlip {
   orderId: number;
   pickingSlipId: number;
-  pickingSlipStatus: 'not printed' | 'printed' | 'held';
+  pickingSlipStatus: 'not_printed' | 'printed' | 'held';
   hasPreOrderItems: boolean;
 }
 

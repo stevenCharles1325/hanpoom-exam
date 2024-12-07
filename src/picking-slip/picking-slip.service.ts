@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { GetParams, PickingSlip } from './picking-slip.interface';
 import { DataSource } from 'typeorm';
+import { PickingSlip as PS } from 'src/database/entities/picking-slip.entity';
+
+const STATUS = {
+  PRINTED: `DATE(psd.printed_at) = '0000-00-00' AND DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00'`,
+  NOT_PRINTED: `DATE(psd.printed_at) != '0000-00-00' AND (DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00')`,
+  HELD: `DATE(held_at) != '0000-00-00'`,
+};
 
 @Injectable()
 export class PickingSlipService {
@@ -14,44 +21,33 @@ export class PickingSlipService {
       pickingSlipStatus = 'printed',
     } = params;
 
-    let statusWhereClause = '1';
-
-    switch (pickingSlipStatus) {
-      case 'held':
-        statusWhereClause = `DATE(held_at) != '0000-00-00'`;
-        break;
-
-      case 'printed':
-        statusWhereClause = `DATE(psd.printed_at) != '0000-00-00' AND (DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00')`;
-        break;
-
-      case 'not printed':
-        statusWhereClause = `DATE(psd.printed_at) = '0000-00-00' AND DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00'`;
-        break;
-    }
-
-    const queryRunner = this.datasource.createQueryRunner();
-    const query = `
-      SELECT
-        ps.order_id as orderId,
-        psi.picking_slip_id as pickingSlipId,
-        psi.is_pre_order as hasPreOrderItems,
+    const queryRunner = this.datasource
+      .getRepository(PS)
+      .createQueryBuilder('ps')
+      .select([
+        'ps.order_id as orderId',
+        'ps.id as pickingSlipId',
+        'psi.is_pre_order as hasPreOrderItems',
+      ])
+      .addSelect(
+        `
         CASE
-          WHEN DATE(psd.printed_at) = '0000-00-00' AND DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00' THEN 'not printed'
-          WHEN DATE(psd.printed_at) != '0000-00-00' AND (DATE(psd.inspected_at) = '0000-00-00' AND DATE(psd.shipped_at) = '0000-00-00' AND DATE(psd.held_at) = '0000-00-00') THEN 'printed'
-          WHEN DATE(held_at) != '0000-00-00' THEN 'held'
-        END AS pickingSlipStatus
-      FROM picking_slips as ps
-      JOIN picking_slip_items psi
-        ON ps.id = psi.picking_slip_id
-      JOIN picking_slip_dates psd
-        ON ps.id = psd.picking_slip_id
-      WHERE ${statusWhereClause}
-      ORDER BY ps.created_at ${sort?.toUpperCase()}
-      LIMIT ${limit} OFFSET ${limit * page};
-    `;
+          WHEN ${STATUS.NOT_PRINTED} THEN 'not printed'
+          WHEN ${STATUS.PRINTED} THEN 'printed'
+          WHEN ${STATUS.HELD} THEN 'held'
+        END
+        `,
+        'pickingSlipStatus',
+      )
+      .innerJoin('ps.pickingSlipItems', 'psi')
+      .innerJoin('ps.pickingSlipDate', 'psd');
 
-    const result = (await queryRunner.query(query)) as PickingSlip[];
+    const result = (await queryRunner
+      .where(STATUS[pickingSlipStatus.toUpperCase()])
+      .orderBy('ps.created_at', sort.toUpperCase() as any)
+      .limit(limit)
+      .offset(limit * page)
+      .getRawMany()) as unknown as PickingSlip[];
 
     return result.map(({ hasPreOrderItems, ...rest }) => ({
       ...rest,

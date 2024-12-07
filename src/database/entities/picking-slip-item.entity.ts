@@ -2,13 +2,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { PickingSlip } from './picking-slip.entity';
 
-Entity();
+@Entity({ name: 'picking_slip_items' })
 export class PickingSlipItem {
   @PrimaryGeneratedColumn()
   id: number;
@@ -39,7 +40,6 @@ export class PickingSlipItem {
 
   @Column({
     type: 'tinyint',
-    length: 1,
     transformer: {
       to: (value: boolean) => Number(value),
       from: (value: number) => Boolean(value),
@@ -50,7 +50,6 @@ export class PickingSlipItem {
 
   @Column({
     type: 'tinyint',
-    length: 1,
     transformer: {
       to: (value: boolean) => Number(value),
       from: (value: number) => Boolean(value),
@@ -73,5 +72,6 @@ export class PickingSlipItem {
 
   // Relationships
   @ManyToOne(() => PickingSlip, (pickingSlip) => pickingSlip.pickingSlipItems)
+  @JoinColumn({ name: 'picking_slip_id' })
   pickingSlip: PickingSlip;
 }

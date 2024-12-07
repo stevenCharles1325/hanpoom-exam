@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -9,7 +10,7 @@ import {
 import { PickingSlipDate } from './picking-slip-date.entity';
 import { PickingSlipItem } from './picking-slip-item.entity';
 
-Entity();
+@Entity({ name: 'picking_slips' })
 export class PickingSlip {
   @PrimaryGeneratedColumn()
   id: number;
