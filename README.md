@@ -1,6 +1,6 @@
 ### How to run?
 
-1. Setup DB connection
+1. Setup DB connection in the `.env` file
 2. Run the following commands:
 
 ```bash
